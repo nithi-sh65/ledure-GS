@@ -5,7 +5,7 @@ const dns = require('dns');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const mongoose = require('mongoose');
-const { Ledger, SEED } = require('./models/Ledger');
+const { Company, Setting, Ledger, SEED } = require('./models/Ledger');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -38,22 +38,77 @@ const saveLocalLedger = async ({ ownCompany, companies }) => {
 
 const getLedger = async () => {
   if (useMongo) {
-    let doc = await Ledger.findOne({ key: 'main' });
-    if (!doc) {
-      doc = await Ledger.create(SEED);
+    // 1. Auto-migration: check if old single Ledger document exists and migrate companies to individual Company documents
+    try {
+      const oldLedger = await Ledger.findOne({ key: 'main' });
+      if (oldLedger && Array.isArray(oldLedger.companies) && oldLedger.companies.length > 0) {
+        for (const comp of oldLedger.companies) {
+          if (comp && comp.id) {
+            await Company.findOneAndUpdate(
+              { id: comp.id },
+              { $set: { id: comp.id, name: comp.name, gstin: comp.gstin || '', entries: comp.entries || [] } },
+              { upsert: true, new: true }
+            );
+          }
+        }
+        await Ledger.updateOne({ key: 'main' }, { $unset: { companies: "" } });
+      }
+    } catch (_) {}
+
+    // 2. Fetch setting for ownCompany
+    let setting = await Setting.findOne({ key: 'main' });
+    if (!setting) {
+      setting = await Setting.create({ key: 'main', ownCompany: SEED.ownCompany });
     }
-    return doc;
+
+    // 3. Fetch all separate company documents
+    let companies = await Company.find({}).sort({ createdAt: 1 }).lean();
+    if (companies.length === 0 && SEED.companies && SEED.companies.length > 0) {
+      await Company.insertMany(SEED.companies);
+      companies = await Company.find({}).sort({ createdAt: 1 }).lean();
+    }
+
+    return {
+      ownCompany: setting.ownCompany || SEED.ownCompany,
+      companies
+    };
   }
   return ensureLocalLedger();
 };
 
 const upsertLedger = async ({ ownCompany, companies }) => {
   if (useMongo) {
-    return Ledger.findOneAndUpdate(
-      { key: 'main' },
-      { $set: { ownCompany, companies } },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
-    );
+    if (ownCompany) {
+      await Setting.findOneAndUpdate(
+        { key: 'main' },
+        { $set: { ownCompany } },
+        { new: true, upsert: true }
+      );
+    }
+
+    if (Array.isArray(companies)) {
+      const activeIds = [];
+      for (const comp of companies) {
+        if (!comp || !comp.id) continue;
+        activeIds.push(comp.id);
+        await Company.findOneAndUpdate(
+          { id: comp.id },
+          { $set: { id: comp.id, name: comp.name, gstin: comp.gstin || '', entries: comp.entries || [] } },
+          { new: true, upsert: true }
+        );
+      }
+
+      // Delete companies removed by user
+      await Company.deleteMany({ id: { $nin: activeIds } });
+    }
+
+    const updatedCompanies = await Company.find({}).sort({ createdAt: 1 }).lean();
+    const setting = await Setting.findOne({ key: 'main' });
+
+    return {
+      ownCompany: (setting && setting.ownCompany) || ownCompany || SEED.ownCompany,
+      companies: updatedCompanies
+    };
   }
   return saveLocalLedger({ ownCompany, companies });
 };
@@ -76,24 +131,15 @@ const initialize = async () => {
     }
 
     try {
+      try {
+        dns.setServers(['8.8.8.8', '1.1.1.1']);
+      } catch (_) {}
       await mongoose.connect(MONGODB_URI);
       useMongo = true;
-      console.log('✅ Connected to MongoDB');
+      console.log('✅ Connected to MongoDB Atlas');
     } catch (err) {
-      if (err.message.includes('querySrv') || err.message.includes('ECONNREFUSED')) {
-        try {
-          dns.setServers(['8.8.8.8', '1.1.1.1']);
-          await mongoose.connect(MONGODB_URI);
-          useMongo = true;
-          console.log('✅ Connected to MongoDB (via Google/Cloudflare DNS)');
-        } catch (dnsErr) {
-          console.error('❌ MongoDB connection error:', dnsErr.message);
-          console.warn('⚠️ Starting server with a local JSON fallback instead of MongoDB.');
-        }
-      } else {
-        console.error('❌ MongoDB connection error:', err.message);
-        console.warn('⚠️ Starting server with a local JSON fallback instead of MongoDB.');
-      }
+      console.error('❌ MongoDB connection error:', err.message);
+      console.warn('⚠️ Starting server with local JSON fallback instead of MongoDB.');
     }
   } else {
     console.warn('⚠️ MONGODB_URI is not set. Starting server with local JSON fallback storage.');

@@ -14,30 +14,37 @@ const entrySchema = new mongoose.Schema(
 
 const companySchema = new mongoose.Schema(
   {
-    id: String,
-    name: String,
-    gstin: String,
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    gstin: { type: String, default: '' },
     entries: [entrySchema]
-  },
-  { _id: false }
-);
-
-const ledgerSchema = new mongoose.Schema(
-  {
-    // Single-document store: this app manages one ledger ("main") that
-    // contains every customer company and its bills. If you ever need
-    // multiple separate ledgers/users, add a real "key" per user/business.
-    key: { type: String, default: 'main', unique: true },
-    ownCompany: { type: String, default: 'Sri Kathir Ganapathy Spares' },
-    companies: [companySchema]
   },
   { timestamps: true }
 );
 
-const Ledger = mongoose.model('Ledger', ledgerSchema);
+const settingSchema = new mongoose.Schema(
+  {
+    key: { type: String, default: 'main', unique: true },
+    ownCompany: { type: String, default: 'Sri Kathir Ganapathy Spares' }
+  },
+  { timestamps: true }
+);
 
-// Starter data used only the very first time the app runs
-// (i.e. when the "main" ledger document doesn't exist yet in MongoDB).
+// Deprecated single-document schema (kept for auto-migration)
+const legacyLedgerSchema = new mongoose.Schema(
+  {
+    key: { type: String, default: 'main', unique: true },
+    ownCompany: String,
+    companies: Array
+  },
+  { strict: false }
+);
+
+const Company = mongoose.model('Company', companySchema);
+const Setting = mongoose.model('Setting', settingSchema);
+const Ledger = mongoose.model('Ledger', legacyLedgerSchema);
+
+// Starter seed data
 const SEED = {
   key: 'main',
   ownCompany: 'Sri Kathir Ganapathy Spares',
@@ -66,4 +73,4 @@ const SEED = {
   ]
 };
 
-module.exports = { Ledger, SEED };
+module.exports = { Company, Setting, Ledger, SEED };
