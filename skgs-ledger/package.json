@@ -1,0 +1,19 @@
+{
+  "name": "skgs-ledger",
+  "version": "1.0.0",
+  "description": "Sri Kathir Ganapathy Spares — Customer Ledger PWA, backed by MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.1",
+    "serverless-http": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sri Kathir Ganapathy Spares — Customer Ledger</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1B3A4B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SKGS Ledger">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B3A4B;
+    --ink-soft:#2C4E60;
+    --paper:#FBF8F1;
+    --paper-deep:#F3EEDF;
+    --line:#DED4B9;
+    --line-soft:#E9E2CC;
+    --card:#FFFFFF;
+    --slate:#5B6B73;
+    --slate-light:#8A97A0;
+    --amber:#B4791A;
+    --amber-bg:#FBF0DC;
+    --green:#2F6B4F;
+    --green-bg:#E4F1E9;
+    --rust:#AE4430;
+    --rust-bg:#F7E7E2;
+    --shadow: 0 1px 2px rgba(27,58,75,0.06), 0 6px 20px rgba(27,58,75,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(27,58,75,0.04), transparent 40%),
+      radial-gradient(circle at 90% 0%, rgba(180,121,26,0.05), transparent 40%);
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:1100px;margin:0 auto;}
+  .hidden{display:none !important;}
+
+  /* ===== Shared: cover header ===== */
+  .cover{
+    background:linear-gradient(160deg,var(--ink) 0%,#132C39 100%);
+    border-radius:16px;
+    padding:30px 38px;
+    color:#F4EFE0;
+    position:relative;
+    overflow:hidden;
+    box-shadow: var(--shadow);
+  }
+  .cover::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 26px);
+    pointer-events:none;
+  }
+  .cover::after{
+    content:"";
+    position:absolute; right:-60px; top:-60px; width:220px; height:220px; border-radius:50%;
+    background:radial-gradient(circle, rgba(196,150,74,0.18), transparent 70%);
+  }
+  .cover-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;position:relative;flex-wrap:wrap;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:#C9B98A; margin:0 0 10px;
+  }
+  .company-name{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(24px,3.6vw,34px);
+    line-height:1.14;
+    margin:0 0 6px;
+    letter-spacing:.2px;
+  }
+  .gstin{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:#C9B98A;
+    letter-spacing:.04em;
+  }
+  .cover-seal{
+    text-align:right;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:#9FB2BC;
+    border:1px solid rgba(244,239,224,0.25);
+    border-radius:10px;
+    padding:10px 14px;
+    min-width:150px;
+  }
+  .cover-seal .val{color:#F4EFE0;font-size:15px;font-weight:600;margin-top:2px;}
+
+  .back-link{
+    display:inline-flex;align-items:center;gap:6px;
+    color:#C9D8DE;font-size:13px;font-weight:500;
+    text-decoration:none;margin-bottom:14px;cursor:pointer;
+    background:none;border:none;padding:0;font-family:'Inter',sans-serif;
+  }
+  .back-link:hover{color:#F4EFE0;}
+
+  /* ===== Toolbar (shared style) ===== */
+  .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:24px 0 16px;}
+  .search{flex:1; min-width:200px; display:flex;align-items:center;gap:8px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px;}
+  .search input{border:none;outline:none;background:transparent;font-family:'Inter',sans-serif;font-size:14px;color:var(--ink);width:100%;}
+  .search svg{flex-shrink:0;opacity:.5;}
+  select.filter{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 14px;font-family:'Inter',sans-serif;font-size:13.5px;color:var(--ink-soft);cursor:pointer;}
+  .btn{border:none; border-radius:10px; padding:10px 18px; font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:transform .12s ease, box-shadow .12s ease; white-space:nowrap;}
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--ink); color:#F4EFE0;}
+  .btn-primary:hover{background:var(--ink-soft);}
+  .btn-outline{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+  .btn-outline:hover{border-color:var(--slate-light);}
+  .btn-ghost{background:transparent;color:var(--slate);padding:8px 10px;}
+  .btn-ghost:hover{color:var(--ink);}
+
+  /* ===== HOME: header bar ===== */
+  .home-header{
+    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-mark{
+    width:52px;height:52px;border-radius:12px;
+    background:linear-gradient(160deg,var(--ink),#132C39);
+    display:flex;align-items:center;justify-content:center;
+    color:#C9B98A;font-family:'Fraunces',serif;font-weight:700;font-size:20px;
+    box-shadow:var(--shadow);
+    flex-shrink:0;
+  }
+  .brand-text .eyebrow2{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate-light);font-weight:600;margin:0 0 2px;}
+  .brand-text h1{font-family:'Fraunces',serif;font-size:clamp(22px,3.2vw,30px);margin:0;color:var(--ink);font-weight:600;}
+
+  /* ===== HOME: company grid ===== */
+  .company-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+    gap:16px;
+    margin-top:18px;
+  }
+  .company-card{
+    background:var(--card);
+    border:1px solid var(--line-soft);
+    border-radius:14px;
+    padding:20px;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease;
+    position:relative;
+  }
+  .company-card:hover{transform:translateY(-2px);border-color:var(--slate-light);}
+  .company-card .cc-name{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink);margin:0 0 6px;line-height:1.25;}
+  .company-card .cc-gstin{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--slate-light);margin-bottom:16px;}
+  .cc-stats{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid var(--line-soft);padding-top:14px;}
+  .cc-stat-label{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-light);font-weight:600;margin-bottom:4px;}
+  .cc-stat-value{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--ink);}
+  .cc-stat-value.due{color:var(--rust);}
+  .cc-stat-value.zero{color:var(--green);}
+  .cc-pending-pill{
+    position:absolute;top:16px;right:16px;
+    background:var(--amber-bg);color:var(--amber);
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;
+    padding:3px 9px;border-radius:20px;
+  }
+  .cc-delete{
+    width:22px;height:22px;border-radius:6px;border:none;background:transparent;
+    display:inline-flex;align-items:center;justify-content:center;color:var(--slate-light);cursor:pointer;
+    margin-left:6px;flex-shrink:0;
+  }
+  .cc-delete:hover{background:var(--rust-bg);color:var(--rust);}
+  .cc-bills-row{display:flex;align-items:center;justify-content:flex-end;}
+
+  .sync-bar{
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+    background:var(--card);border:1px solid var(--line-soft);border-radius:10px;
+    padding:10px 16px;margin-bottom:4px;
+  }
+  .sync-status{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--slate);}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--slate-light);flex-shrink:0;}
+  .sync-dot.live{background:var(--green);box-shadow:0 0 0 3px var(--green-bg);}
+  .sync-dot.off{background:var(--amber);box-shadow:0 0 0 3px var(--amber-bg);}
+  .sync-actions{display:flex;gap:8px;}
+  .sync-actions button{
+    border:none;background:none;color:var(--ink-soft);font-family:'Inter',sans-serif;
+    font-size:12.5px;font-weight:600;cursor:pointer;padding:5px 10px;border-radius:7px;
+  }
+  .sync-actions button:hover{background:var(--paper-deep);}
+  #installBtn{
+    border:1px solid var(--line);background:var(--card);color:var(--ink-soft);
+    font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;
+    padding:6px 12px;border-radius:7px;
+  }
+  #installBtn:hover{border-color:var(--slate-light);color:var(--ink);}
+
+  .empty-companies{
+    text-align:center;padding:70px 20px;color:var(--slate-light);
+    background:var(--card);border:1px dashed var(--line);border-radius:14px;margin-top:18px;
+  }
+  .empty-companies svg{opacity:.35;margin-bottom:12px;}
+
+  /* ===== Summary (ledger view) ===== */
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:-26px;position:relative;z-index:2;padding:0 6px;}
+  .sum-card{background:var(--card);border:1px solid var(--line-soft);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);}
+  .sum-label{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-light);font-weight:600;margin-bottom:6px;}
+  .sum-value{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--ink);}
+  .sum-value.green{color:var(--green);}
+  .sum-value.amber{color:var(--amber);}
+  .sum-value.rust{color:var(--rust);}
+  .sum-sub{font-size:12px;color:var(--slate-light);margin-top:3px;}
+
+  /* ===== Ledger table ===== */
+  .ledger{background:var(--card);border-radius:14px;border:1px solid var(--line-soft);overflow:hidden;box-shadow:var(--shadow);}
+  table{width:100%;border-collapse:collapse;}
+  thead th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-light);font-weight:600;padding:14px 16px;background:var(--paper-deep);border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td{padding:13px 16px;font-size:14px;border-bottom:1px solid var(--line-soft);color:var(--ink-soft);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FBFAF5;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .num{text-align:right;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .bill-no{font-weight:600;color:var(--ink);}
+  .status-badge{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:5px 10px; border-radius:20px;}
+  .status-paid{background:var(--green-bg);color:var(--green);}
+  .status-pending{background:var(--amber-bg);color:var(--amber);}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .balance-cell{font-weight:600;}
+  .balance-cell.zero{color:var(--slate-light);}
+  .balance-cell.due{color:var(--rust);}
+  .row-actions{display:flex;gap:4px;justify-content:flex-end;}
+  .icon-btn{width:30px;height:30px;border-radius:8px;border:none;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--slate-light);}
+  .icon-btn:hover{background:var(--paper-deep);color:var(--ink);}
+  .icon-btn.danger:hover{background:var(--rust-bg);color:var(--rust);}
+  .empty-state{padding:60px 20px;text-align:center;color:var(--slate-light);}
+  .empty-state svg{opacity:.35;margin-bottom:10px;}
+
+  /* ===== Modal ===== */
+  .overlay{position:fixed;inset:0;background:rgba(27,58,75,0.35);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;backdrop-filter:blur(2px);}
+  .overlay.open{display:flex;}
+  .modal{background:var(--card);border-radius:16px;width:100%;max-width:440px;padding:26px 26px 22px;box-shadow:0 20px 60px rgba(27,58,75,0.25);}
+  .modal h3{font-family:'Fraunces',serif;font-size:20px;margin:0 0 18px;color:var(--ink);}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--slate);margin-bottom:6px;letter-spacing:.02em;}
+  .field input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--ink);outline:none;}
+  .field input:focus{border-color:var(--ink-soft);}
+  .field-row{display:flex;gap:12px;}
+  .field-row .field{flex:1;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .modal-hint{font-size:12px;color:var(--slate-light);margin-top:-6px;margin-bottom:16px;line-height:1.5;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#F4EFE0;padding:12px 20px;border-radius:10px;font-size:13.5px;font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,0.2);opacity:0;pointer-events:none;transition:all .25s ease;z-index:100;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  footer{text-align:center;color:var(--slate-light);font-size:12px;margin-top:26px;}
+
+  @media(max-width:720px){
+    .summary{grid-template-columns:repeat(2,1fr);}
+    thead th:nth-child(1), tbody td:nth-child(1){display:none;}
+    .cover{padding:24px 20px;}
+    .home-header{align-items:flex-start;}
+  }
+
+  @media print{
+    body{padding:0;background:#fff;}
+    .toolbar,.row-actions,.icon-btn,.overlay,footer,.no-print{display:none !important;}
+    .cover{background:#fff !important;color:#1B3A4B !important;box-shadow:none;border:1px solid #ccc;}
+    .cover::before,.cover::after{display:none;}
+    .company-name,.eyebrow,.gstin,.back-link{color:#1B3A4B !important;}
+    .cover-seal{border-color:#1B3A4B;color:#1B3A4B;}
+    .cover-seal .val{color:#1B3A4B;}
+    .sum-card,.ledger{box-shadow:none;border:1px solid #ccc;}
+    .summary{margin-top:16px;}
+    thead th{background:#F3EEDF !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .status-paid{background:#E4F1E9 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .status-pending{background:#FBF0DC !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============== HOME VIEW ============== -->
+  <div id="homeView">
+    <div class="home-header">
+      <div class="brand">
+        <div class="brand-mark">SK</div>
+        <div class="brand-text">
+          <p class="eyebrow2">Customer Ledger Manager</p>
+          <h1 id="ownCompanyName">Sri Kathir Ganapathy Spares</h1>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-primary" id="addCompanyBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Company
+        </button>
+      </div>
+    </div>
+
+    <div class="sync-bar" id="syncBar">
+      <div class="sync-status" id="syncStatus">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncLabel">Connecting to database…</span>
+      </div>
+      <div class="sync-actions" id="syncActions"></div>
+      <button id="installBtn" class="hidden">Install app</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="companySearch" type="text" placeholder="Search companies…">
+      </div>
+      <button class="btn btn-outline" id="importBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import JSON
+      </button>
+      <input type="file" id="importFile" accept="application/json" class="hidden">
+      <button class="btn btn-outline" id="exportBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export JSON
+      </button>
+    </div>
+
+    <div class="company-grid" id="companyGrid"></div>
+
+    <div class="empty-companies hidden" id="emptyCompanies">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+      <div>No companies yet. Click <strong>Add Company</strong> to start a ledger.</div>
+    </div>
+
+    <footer>Sri Kathir Ganapathy Spares &middot; Ledger data is stored in MongoDB &middot; use Export JSON to back it up</footer>
+  </div>
+
+  <!-- ============== LEDGER VIEW ============== -->
+  <div id="ledgerView" class="hidden">
+    <button class="back-link" id="backBtn" style="color:var(--slate);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      All companies
+    </button>
+
+    <div class="cover">
+      <button class="back-link no-print" id="backBtn2">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        All companies
+      </button>
+      <div class="cover-top">
+        <div>
+          <p class="eyebrow">Customer Ledger &middot; Accounts Register</p>
+          <h1 class="company-name" id="ledgerCompanyName">—</h1>
+          <div class="gstin" id="ledgerGstin">—</div>
+        </div>
+        <div class="cover-seal">
+          <div>AS OF TODAY</div>
+          <div class="val" id="todayDate">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="sum-card">
+        <div class="sum-label">Total Billed</div>
+        <div class="sum-value" id="sumBilled">₹0</div>
+        <div class="sum-sub" id="sumBilledCount">0 bills</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">Total Received</div>
+        <div class="sum-value green" id="sumReceived">₹0</div>
+        <div class="sum-sub" id="sumReceivedCount">0 payments</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">Outstanding</div>
+        <div class="sum-value rust" id="sumOutstanding">₹0</div>
+        <div class="sum-sub" id="sumOutstandingCount">0 bills pending</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">Avg. Days to Pay</div>
+        <div class="sum-value amber" id="sumAvgDays">—</div>
+        <div class="sum-sub">across settled bills</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="searchInput" type="text" placeholder="Search by bill no. or date…">
+      </div>
+      <select class="filter" id="filterStatus">
+        <option value="all">All bills</option>
+        <option value="paid">Paid only</option>
+        <option value="pending">Pending only</option>
+      </select>
+      <button class="btn btn-outline no-print" id="printBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print
+      </button>
+      <button class="btn btn-outline no-print" id="downloadBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download CSV
+      </button>
+      <button class="btn btn-primary no-print" id="addBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Bill
+      </button>
+    </div>
+
+    <div class="ledger">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Bill Date</th><th>Bill No.</th>
+            <th style="text-align:right">Debit (₹)</th><th style="text-align:right">Credit (₹)</th>
+            <th>Payment Date</th><th>Status</th><th style="text-align:right">Balance (₹)</th>
+            <th class="no-print"></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11H1l8-8 8 8h-8v10"/></svg>
+        <div>No bills match your search.</div>
+      </div>
+    </div>
+
+    <footer>Sri Kathir Ganapathy Spares &middot; Ledger data is stored in MongoDB</footer>
+  </div>
+</div>
+
+<!-- Add/Edit Company Modal -->
+<div class="overlay" id="companyOverlay">
+  <div class="modal">
+    <h3 id="companyModalTitle">Add Company</h3>
+    <input type="hidden" id="editCompanyId">
+    <div class="field">
+      <label>Company Name</label>
+      <input type="text" id="fCompanyName" placeholder="e.g. Abhilash Chemicals & Pharmaceuticals, Madurai" style="font-family:'Inter',sans-serif;">
+    </div>
+    <div class="field">
+      <label>GSTIN</label>
+      <input type="text" id="fCompanyGstin" placeholder="33AABCA7508H1ZZ">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="cancelCompanyBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveCompanyBtn">Save Company</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Bill Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Add Bill</h3>
+    <input type="hidden" id="editId">
+    <div class="field-row">
+      <div class="field">
+        <label>Bill Date</label>
+        <input type="date" id="fDate">
+      </div>
+      <div class="field">
+        <label>Bill No.</label>
+        <input type="text" id="fBillNo" placeholder="629">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Debit Amount (₹)</label>
+        <input type="number" id="fDebit" placeholder="11800">
+      </div>
+      <div class="field">
+        <label>Credit Received (₹)</label>
+        <input type="number" id="fCredit" placeholder="leave blank if pending">
+      </div>
+    </div>
+    <div class="field">
+      <label>Date of Payment</label>
+      <input type="date" id="fPaidDate">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn">Save Bill</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const OWN_COMPANY = 'Sri Kathir Ganapathy Spares';
+
+const seedAppData = {
+  ownCompany: OWN_COMPANY,
+  companies: [
+    {
+      id: 'c-abhilash',
+      name: 'Abhilash Chemicals & Pharmaceuticals, Madurai',
+      gstin: '33AABCA7508H1ZZ',
+      entries: [
+        {id:'e-1', date:'2026-04-03', bill:'524', debit:10839, credit:10839, paidDate:'2026-04-10'},
+        {id:'e-2', date:'2026-04-10', bill:'538', debit:7550,  credit:7550,  paidDate:'2026-04-10'},
+        {id:'e-3', date:'2026-05-01', bill:'576', debit:10389, credit:10389, paidDate:'2026-05-09'},
+        {id:'e-4', date:'2026-05-11', bill:'580', debit:10390, credit:10390, paidDate:'2026-05-18'},
+        {id:'e-5', date:'2026-05-26', bill:'595', debit:11800, credit:11800, paidDate:'2026-06-01'},
+        {id:'e-6', date:'2026-05-27', bill:'597', debit:11800, credit:11800, paidDate:'2026-06-01'},
+        {id:'e-7', date:'2026-06-10', bill:'604', debit:11800, credit:11800, paidDate:'2026-06-12'},
+        {id:'e-8', date:'2026-06-11', bill:'607', debit:11800, credit:null,  paidDate:null},
+        {id:'e-9', date:'2026-06-23', bill:'613', debit:6391,  credit:6391,  paidDate:'2026-06-25'},
+        {id:'e-10', date:'2026-07-02', bill:'614', debit:11800, credit:11800, paidDate:'2026-07-10'},
+        {id:'e-11', date:'2026-07-07', bill:'621', debit:11800, credit:11800, paidDate:'2026-07-10'},
+        {id:'e-12', date:'2026-07-13', bill:'625', debit:11800, credit:11800, paidDate:'2026-07-14'},
+        {id:'e-13', date:'2026-07-14', bill:'627', debit:9464,  credit:9464,  paidDate:'2026-07-18'},
+        {id:'e-14', date:'2026-07-25', bill:'628', debit:11800, credit:11800, paidDate:'2026-07-28'}
+      ]
+    }
+  ]
+};
+
+/* ---------- Storage: MongoDB via backend API ---------- */
+// Same-origin by default: works automatically when this file is served
+// by the included Express server (server.js). If you ever host the
+// frontend and backend on different domains, set API_BASE to the full
+// backend URL, e.g. 'https://your-app.onrender.com'.
+const API_BASE = '';
+const API_URL = API_BASE + '/api/ledger';
+
+let appData = JSON.parse(JSON.stringify(seedAppData)); // placeholder until API loads
+let currentCompanyId = null;
+let dbConnected = false;
+
+function setSyncStatus(connected, message){
+  dbConnected = connected;
+  const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  const actions = document.getElementById('syncActions');
+  dot.className = 'sync-dot ' + (connected ? 'live' : 'off');
+  label.textContent = message;
+  actions.innerHTML = '';
+  if(!connected){
+    const retryBtn = document.createElement('button');
+    retryBtn.textContent = 'Retry';
+    retryBtn.onclick = initData;
+    actions.appendChild(retryBtn);
+  }
+}
+
+// Loads the ledger from MongoDB (via the backend API) on startup.
+async function initData(){
+  setSyncStatus(false, 'Connecting to database…');
+  try{
+    const res = await fetch(API_URL);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if(data && Array.isArray(data.companies)){
+      appData = data;
+    }
+    setSyncStatus(true, 'Synced to MongoDB');
+  }catch(e){
+    setSyncStatus(false, 'Could not reach the database — check your server is running and connected.');
+  }
+  document.getElementById('ownCompanyName').textContent = appData.ownCompany || OWN_COMPANY;
+  renderHome();
+}
+
+// Saves the whole ledger back to MongoDB. Called after every change.
+async function saveData(data){
+  try{
+    const res = await fetch(API_URL, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    setSyncStatus(true, 'Synced to MongoDB');
+  }catch(e){
+    setSyncStatus(false, 'Save failed — changes are only in this tab until reconnected.');
+  }
+}
+
+
+const fmtMoney = n => '₹' + Number(n||0).toLocaleString('en-IN');
+const fmtDate = iso => {
+  if(!iso) return '—';
+  const d = new Date(iso+'T00:00:00');
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+};
+function daysBetween(a,b){
+  const d1=new Date(a+'T00:00:00'), d2=new Date(b+'T00:00:00');
+  return Math.round((d2-d1)/(1000*60*60*24));
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+document.getElementById('ownCompanyName').textContent = appData.ownCompany || OWN_COMPANY;
+
+/* ---------- Company helpers ---------- */
+function companyStats(c){
+  const totalBilled = c.entries.reduce((s,e)=> s + (Number(e.debit)||0), 0);
+  const totalReceived = c.entries.reduce((s,e)=> s + (Number(e.credit)||0), 0);
+  const outstanding = totalBilled - totalReceived;
+  const pendingCount = c.entries.filter(e=>!e.credit).length;
+  return {totalBilled, totalReceived, outstanding, pendingCount};
+}
+
+/* ---------- HOME VIEW ---------- */
+function renderHome(){
+  const search = document.getElementById('companySearch').value.trim().toLowerCase();
+  const grid = document.getElementById('companyGrid');
+  const empty = document.getElementById('emptyCompanies');
+  grid.innerHTML = '';
+
+  const filtered = appData.companies.filter(c=>{
+    if(!search) return true;
+    return (c.name+' '+c.gstin).toLowerCase().includes(search);
+  });
+
+  if(appData.companies.length === 0){
+    empty.classList.remove('hidden');
+    grid.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  grid.classList.remove('hidden');
+
+  filtered.forEach(c=>{
+    const s = companyStats(c);
+    const card = document.createElement('div');
+    card.className = 'company-card';
+    card.innerHTML = `
+      ${s.pendingCount>0 ? `<div class="cc-pending-pill">${s.pendingCount} pending</div>` : ''}
+      <div class="cc-name">${c.name}</div>
+      <div class="cc-gstin">${c.gstin || 'No GSTIN on file'}</div>
+      <div class="cc-stats">
+        <div>
+          <div class="cc-stat-label">Outstanding</div>
+          <div class="cc-stat-value ${s.outstanding>0?'due':'zero'}">${fmtMoney(s.outstanding)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="cc-stat-label">Bills</div>
+          <div class="cc-bills-row">
+            <div class="cc-stat-value">${c.entries.length}</div>
+            <button class="cc-delete no-print" title="Delete company" data-id="${c.id}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', (e)=>{
+      if(e.target.closest('.cc-delete')) return;
+      openLedger(c.id);
+    });
+    card.querySelector('.cc-delete').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(!confirm('Delete "' + c.name + '" and all its bills? This cannot be undone.')) return;
+      appData.companies = appData.companies.filter(x=>x.id!==c.id);
+      saveData(appData);
+      renderHome();
+      showToast('Company deleted');
+    });
+    grid.appendChild(card);
+  });
+}
+
+function openAddCompany(){
+  document.getElementById('companyModalTitle').textContent = 'Add Company';
+  document.getElementById('editCompanyId').value = '';
+  document.getElementById('fCompanyName').value = '';
+  document.getElementById('fCompanyGstin').value = '';
+  document.getElementById('companyOverlay').classList.add('open');
+}
+function closeCompanyModal(){ document.getElementById('companyOverlay').classList.remove('open'); }
+
+function saveCompany(){
+  const id = document.getElementById('editCompanyId').value;
+  const name = document.getElementById('fCompanyName').value.trim();
+  const gstin = document.getElementById('fCompanyGstin').value.trim();
+  if(!name){ showToast('Please enter a company name'); return; }
+
+  if(id){
+    const c = appData.companies.find(x=>x.id===id);
+    c.name = name; c.gstin = gstin;
+    showToast('Company updated');
+  } else {
+    appData.companies.push({ id:'co-'+Date.now(), name, gstin, entries: [] });
+    showToast('Company added');
+  }
+  saveData(appData);
+  closeCompanyModal();
+  renderHome();
+}
+
+/* ---------- Import / Export ---------- */
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(appData, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'companies.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Exported companies.json');
+}
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = async (e)=>{
+    try{
+      const parsed = JSON.parse(e.target.result);
+      if(!parsed || !Array.isArray(parsed.companies)) throw new Error('bad format');
+      appData = parsed;
+      if(!appData.ownCompany) appData.ownCompany = OWN_COMPANY;
+      await saveData(appData);
+      document.getElementById('ownCompanyName').textContent = appData.ownCompany;
+      renderHome();
+      showToast('Imported ' + appData.companies.length + ' companies from JSON');
+    }catch(err){
+      showToast('Could not read that file — check it matches the companies.json format');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- LEDGER VIEW ---------- */
+function openLedger(companyId){
+  currentCompanyId = companyId;
+  document.getElementById('homeView').classList.add('hidden');
+  document.getElementById('ledgerView').classList.remove('hidden');
+  window.scrollTo(0,0);
+  renderLedger();
+}
+function backToHome(){
+  currentCompanyId = null;
+  document.getElementById('ledgerView').classList.add('hidden');
+  document.getElementById('homeView').classList.remove('hidden');
+  window.scrollTo(0,0);
+  renderHome();
+}
+function getCurrentCompany(){
+  return appData.companies.find(c=>c.id===currentCompanyId);
+}
+
+function renderLedger(){
+  const company = getCurrentCompany();
+  if(!company){ backToHome(); return; }
+
+  document.getElementById('ledgerCompanyName').textContent = company.name;
+  document.getElementById('ledgerGstin').textContent = company.gstin ? ('GSTIN  ' + company.gstin) : 'No GSTIN on file';
+
+  const search = document.getElementById('searchInput').value.trim().toLowerCase();
+  const filter = document.getElementById('filterStatus').value;
+
+  const sorted = [...company.entries].sort((a,b)=> new Date(a.date) - new Date(b.date));
+  let runningBalance = 0;
+  const rows = sorted.map(e=>{
+    const pending = !e.credit;
+    runningBalance += (Number(e.debit)||0) - (Number(e.credit)||0);
+    return {...e, pending, balanceAfter: runningBalance};
+  });
+
+  const filtered = rows.filter(e=>{
+    if(filter==='paid' && e.pending) return false;
+    if(filter==='pending' && !e.pending) return false;
+    if(search){
+      const hay = (e.bill+' '+e.date+' '+(e.paidDate||'')).toLowerCase();
+      if(!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+  tbody.innerHTML = '';
+
+  if(filtered.length===0){
+    empty.style.display='block';
+  } else {
+    empty.style.display='none';
+    filtered.forEach((e, idx)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="mono" style="color:var(--slate-light)">${idx+1}</td>
+        <td>${fmtDate(e.date)}</td>
+        <td class="bill-no mono">${e.bill}</td>
+        <td class="num">${fmtMoney(e.debit)}</td>
+        <td class="num">${e.credit ? fmtMoney(e.credit) : '—'}</td>
+        <td>${fmtDate(e.paidDate)}</td>
+        <td>
+          ${e.pending
+            ? `<span class="status-badge status-pending"><span class="dot"></span>Pending</span>`
+            : `<span class="status-badge status-paid"><span class="dot"></span>Paid</span>`}
+        </td>
+        <td class="num balance-cell ${e.balanceAfter===0?'zero':'due'}">${fmtMoney(e.balanceAfter)}</td>
+        <td class="no-print">
+          <div class="row-actions">
+            ${e.pending ? `<button class="icon-btn" title="Mark as paid" onclick="markPaid('${e.id}')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>` : ''}
+            <button class="icon-btn" title="Edit" onclick="openEdit('${e.id}')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="icon-btn danger" title="Delete" onclick="deleteEntry('${e.id}')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const totalBilled = rows.reduce((s,e)=> s + (Number(e.debit)||0), 0);
+  const totalReceived = rows.reduce((s,e)=> s + (Number(e.credit)||0), 0);
+  const outstanding = totalBilled - totalReceived;
+  const pendingCount = rows.filter(e=>e.pending).length;
+  const settled = rows.filter(e=>!e.pending && e.paidDate);
+  const avgDays = settled.length
+    ? Math.round(settled.reduce((s,e)=> s + daysBetween(e.date, e.paidDate), 0) / settled.length)
+    : null;
+
+  document.getElementById('sumBilled').textContent = fmtMoney(totalBilled);
+  document.getElementById('sumBilledCount').textContent = rows.length + ' bills';
+  document.getElementById('sumReceived').textContent = fmtMoney(totalReceived);
+  document.getElementById('sumReceivedCount').textContent = settled.length + ' payments';
+  document.getElementById('sumOutstanding').textContent = fmtMoney(outstanding);
+  document.getElementById('sumOutstandingCount').textContent = pendingCount + ' bill' + (pendingCount===1?'':'s') + ' pending';
+  document.getElementById('sumAvgDays').textContent = avgDays===null ? '—' : avgDays + ' days';
+}
+
+function markPaid(id){
+  const company = getCurrentCompany();
+  const e = company.entries.find(x=>x.id===id);
+  if(!e) return;
+  e.credit = e.debit;
+  e.paidDate = new Date().toISOString().slice(0,10);
+  saveData(appData);
+  renderLedger();
+  showToast('Bill #' + e.bill + ' marked as paid');
+}
+function deleteEntry(id){
+  const company = getCurrentCompany();
+  const e = company.entries.find(x=>x.id===id);
+  if(!e) return;
+  if(!confirm('Delete bill #' + e.bill + '? This cannot be undone.')) return;
+  company.entries = company.entries.filter(x=>x.id!==id);
+  saveData(appData);
+  renderLedger();
+  showToast('Bill #' + e.bill + ' deleted');
+}
+function openEdit(id){
+  const company = getCurrentCompany();
+  const e = company.entries.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('modalTitle').textContent = 'Edit Bill #' + e.bill;
+  document.getElementById('editId').value = e.id;
+  document.getElementById('fDate').value = e.date;
+  document.getElementById('fBillNo').value = e.bill;
+  document.getElementById('fDebit').value = e.debit;
+  document.getElementById('fCredit').value = e.credit || '';
+  document.getElementById('fPaidDate').value = e.paidDate || '';
+  document.getElementById('overlay').classList.add('open');
+}
+function openAddBill(){
+  document.getElementById('modalTitle').textContent = 'Add Bill';
+  document.getElementById('editId').value = '';
+  document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fBillNo').value = '';
+  document.getElementById('fDebit').value = '';
+  document.getElementById('fCredit').value = '';
+  document.getElementById('fPaidDate').value = '';
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
+
+function saveEntry(){
+  const company = getCurrentCompany();
+  const id = document.getElementById('editId').value;
+  const date = document.getElementById('fDate').value;
+  const bill = document.getElementById('fBillNo').value.trim();
+  const debit = document.getElementById('fDebit').value;
+  const credit = document.getElementById('fCredit').value;
+  const paidDate = document.getElementById('fPaidDate').value;
+
+  if(!date || !bill || !debit){ showToast('Please fill in date, bill no. and debit amount'); return; }
+
+  if(id){
+    const e = company.entries.find(x=>x.id===id);
+    e.date = date; e.bill = bill; e.debit = Number(debit);
+    e.credit = credit ? Number(credit) : null;
+    e.paidDate = paidDate || null;
+    showToast('Bill #' + bill + ' updated');
+  } else {
+    company.entries.push({
+      id: 'e-' + Date.now(),
+      date, bill, debit: Number(debit),
+      credit: credit ? Number(credit) : null,
+      paidDate: paidDate || null
+    });
+    showToast('Bill #' + bill + ' added');
+  }
+  saveData(appData);
+  closeModal();
+  renderLedger();
+}
+
+function downloadCSV(){
+  const company = getCurrentCompany();
+  const sorted = [...company.entries].sort((a,b)=> new Date(a.date) - new Date(b.date));
+  let rows = [['Bill Date','Bill No','Debit','Credit','Date of Payment','Status']];
+  sorted.forEach(e=>{
+    rows.push([e.date, e.bill, e.debit, e.credit||'', e.paidDate||'', e.credit ? 'Paid':'Pending']);
+  });
+  const csv = rows.map(r=> r.map(v=> `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = company.name.replace(/[^a-z0-9]+/gi,'_') + '_Ledger_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Ledger downloaded as CSV');
+}
+
+/* ---------- Event bindings ---------- */
+document.getElementById('addCompanyBtn').addEventListener('click', openAddCompany);
+document.getElementById('cancelCompanyBtn').addEventListener('click', closeCompanyModal);
+document.getElementById('saveCompanyBtn').addEventListener('click', saveCompany);
+document.getElementById('companyOverlay').addEventListener('click', (e)=>{ if(e.target.id==='companyOverlay') closeCompanyModal(); });
+document.getElementById('companySearch').addEventListener('input', renderHome);
+
+document.getElementById('exportBtn').addEventListener('click', exportJSON);
+document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  if(e.target.files[0]) importJSON(e.target.files[0]);
+  e.target.value = '';
+});
+
+document.getElementById('backBtn').addEventListener('click', backToHome);
+document.getElementById('backBtn2').addEventListener('click', backToHome);
+document.getElementById('addBtn').addEventListener('click', openAddBill);
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('saveBtn').addEventListener('click', saveEntry);
+document.getElementById('overlay').addEventListener('click', (e)=>{ if(e.target.id==='overlay') closeModal(); });
+document.getElementById('searchInput').addEventListener('input', renderLedger);
+document.getElementById('filterStatus').addEventListener('change', renderLedger);
+document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+
+initData();
+
+/* ---------- PWA: service worker + install prompt ---------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if(btn) btn.classList.remove('hidden');
+});
+document.addEventListener('click', async (e)=>{
+  if(e.target.closest('#installBtn')){
+    if(!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    document.getElementById('installBtn').classList.add('hidden');
+  }
+});
+window.addEventListener('appinstalled', ()=>{
+  const btn = document.getElementById('installBtn');
+  if(btn) btn.classList.add('hidden');
+});
+</script>
+</body>
+</html>

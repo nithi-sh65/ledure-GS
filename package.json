@@ -1,0 +1,9 @@
+{
+  "name": "skgs-ledger-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix skgs-ledger start",
+    "dev": "npm --prefix skgs-ledger run dev"
+  }
+}
